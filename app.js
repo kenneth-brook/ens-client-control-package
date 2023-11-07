@@ -16,9 +16,13 @@ const pool = new Pool({
     port: 5432,
 });
 
-app.use(bodyParser.json()) 
+app.use(bodyParser.json());
 
-app.get('/', async(req, res) => res.json('working') );
+app.use(express.static('ens-cp-fe'));
+
+app.get('/', (req, res) => {
+    res.status(200).send();
+});
 
 app.get('/clients', async (req, res) => {
     try {

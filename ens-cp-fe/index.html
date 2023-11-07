@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+<head>
+<title>ENS Control Panel</title>
+<meta name="description" content="">
+<meta name="keywords" content="">
+
+<link rel="stylesheet" href="css/index.css">
+
+</head>
+<body>
+    <header>
+        <img src="img/Group 127.jpg" />
+        <h1>Consolidated Client Control Center</h1>
+    </header>
+    <div class="selectOpt">
+        <script>
+        let Cid
+        </script>
+        <form onsubmit="event.preventDefault(), getId(), selectClient(cId)">
+            <label for="clients">Select a client:</label>
+
+            <select name="clients" id="clients">
+            
+            </select>
+            <input type="submit" value="Select" />
+        </form>
+        <button id="flexButton" onclick="event.preventDefault(), newClient()">New Client</button>
+    </div>
+    <form id="fullForm"></form>
+    <script src="js/index.js?v2"></script>
+    <script>pageLaunch()</script>
+    <script>
+        function getId() {
+            const clientOpt = document.getElementById('clients')
+            cId = clientOpt.value
+        }
+    </script>
+</body>
+</html>

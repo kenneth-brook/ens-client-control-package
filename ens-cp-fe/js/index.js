@@ -4,7 +4,7 @@ const formPull = document.getElementById('fullForm');
 let singleGrab = "";
 
 function pageLaunch() {
-    fetch('https://client-control.911-ens-services.com:3000/clients') 
+    fetch('/clients') 
   .then(response => { 
     if (response.ok) { 
       return response.json(); // Parse the response data as JSON 
@@ -27,7 +27,7 @@ function pageLaunch() {
 }
 
 function selectClient(data) {
-    fetch(`https://client-control.911-ens-services.com:3000/clients/${data}`) 
+    fetch(`/clients/${data}`) 
   .then(response => { 
     if (response.ok) { 
       return response.json(); // Parse the response data as JSON 
@@ -795,7 +795,7 @@ function enterClient(formPull) {
   console.log(json)
 
    // Send JSON object to the server
-   fetch("https://client-control.911-ens-services.com:3000/clients", {
+   fetch("/clients", {
     method: 'POST',
     headers: {
         'Content-Type': 'application/JSON',
@@ -825,7 +825,7 @@ function updateClient(form) {
   console.log(lKey)
 
    // Send JSON object to the server
-   fetch(`https://client-control.911-ens-services.com:3000/clients/${lKey}`, {
+   fetch(`/clients/${lKey}`, {
     method: 'PUT',
     headers: {
         'Content-Type': 'application/json',

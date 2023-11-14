@@ -15,6 +15,8 @@ const pool = new Pool({
     database: 'ens-client',
     password: 'gQ9Sf8cIczKhZiCswXXy',
     port: 5432,
+    max: 20,
+    ssl: true,
 });
 
 app.use(bodyParser.json());
@@ -25,9 +27,9 @@ app.get('/', (req, res) => {
     res.status(200).send();
 });
 
-app.get('/clients', async (req, res) => {
+app.get('/clients', (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM clients');
+        const result = pool.query('SELECT * FROM public.clients');
         res.json(result.rows);
     } catch (error) {
         console.error('Error executing query', error);
@@ -38,7 +40,7 @@ app.get('/clients', async (req, res) => {
 app.get('/clients/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        const result = await pool.query('SELECT * FROM clients WHERE key = $1', [id]);
+        const result = await pool.query('SELECT * FROM public.clients WHERE key = $1', [id]);
         if (result.rows.length === 0) {
             res.status(404).json({ error: 'Not Found' });
         } else {
@@ -51,39 +53,31 @@ app.get('/clients/:id', async (req, res) => {
 });
 
 app.post('/clients', async (req, res) => {
-    const data = req.body;
-
-    if (!data || Object.keys(data).length === 0) {
-        return res.status(400).json({ error: 'Invalid JSON object' });
-    }
-
-    // Filter out keys with empty or undefined values
-    const validData = Object.entries(data)
-        .filter(([key, value]) => value !== undefined && value !== null && value !== '')
-        .reduce((acc, [key, value]) => {
-            acc[key] = value;
-            return acc;
-        }, {});
-
-    if (Object.keys(validData).length === 0) {
-        return res.status(400).json({ error: 'All values are empty or undefined' });
-    }
-    //return `${validData}`
-    const columns = Object.keys(validData).join(',');
-    const values = Object.values(validData);
-    const placeholders = values.map((_, i) => `$${i + 1}`).join(',');
-
     try {
-        const result = await pool.query(
-            `INSERT INTO clients(${columns}) VALUES (${placeholders}) RETURNING *`,
-            values
-        );
+    const formData = req.body;
 
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        console.error('Error executing query', error);
-        res.status(500).json({ error: 'Error inserting data into the database' });
-    }
+    // Assuming you have a table named 'form_data' with corresponding columns
+    const columns = Object.keys(formData);
+    const values = Object.values(formData);
+
+    const query = {
+      text: `INSERT INTO form_data(${columns.join(', ')}) VALUES(${values.map((_, i) => `$${i + 1}`).join(', ')}) RETURNING *`,
+      values,
+    };
+
+    const result = await pool.query(query);
+
+    res.status(200).json({
+      message: 'Form data submitted successfully',
+      data: result.rows,
+    });
+  } catch (error) {
+    console.error('Error handling form submission:', error);
+    res.status(500).json({
+      message: 'Internal Server Error',
+      error: error.message,
+    });
+  }
 });
 
 app.put('/clients/:key', async (req, res) => {
@@ -100,7 +94,7 @@ app.put('/clients/:key', async (req, res) => {
 
     try {
         const result = await pool.query(
-            `UPDATE clients
+            `UPDATE public.clients
              SET (${columns}) = (${placeholders})
              WHERE key = $${values.length + 1}
              RETURNING *`,
@@ -118,9 +112,7 @@ app.put('/clients/:key', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-});
+
 
 module.exports.handler = serverless(app, {
     framework: 'express',

@@ -14,7 +14,7 @@ function pageLaunch() {
   }) 
   .then(data => {
     data.forEach((client) => {
-        let id = client.key;
+        let id = client.id;
         let name = client.name;
         let opItem = `<option value=${id}>${name}</option>`;
         clientList.innerHTML += opItem;
@@ -256,6 +256,23 @@ function newClient() {
       const opt = document.getElementById('plan');
       opt.innerHTML += data;
     })
+
+    /* */
+
+    const nwsInputWrap = document.createElement('div');
+    block2.appendChild(nwsInputWrap);
+    nwsInputWrap.className = "inputWrap";
+
+    const nwsLabel = document.createElement('label');
+    nwsInputWrap.appendChild(nwsLabel);
+    nwsLabel.for = "nws";
+    nwsLabel.innerText = "NWS County Code:"
+
+    const nwsInput = document.createElement('input');
+    nwsInputWrap.appendChild(nwsInput);
+    nwsInput.name = "nws";
+    nwsInput.type = "text";
+    nwsInput.setAttribute('id','nws');
 
     /* END Account Controls */
 
@@ -1046,6 +1063,23 @@ function fillForm() {
       opt.innerHTML += data;
     })
     planInput.value = `${singleGrab.plan}`;
+
+    /* */
+
+    const nwsInputWrap = document.createElement('div');
+    block2.appendChild(nwsInputWrap);
+    nwsInputWrap.className = "inputWrap";
+
+    const nwsLabel = document.createElement('label');
+    nwsInputWrap.appendChild(nwsLabel);
+    nwsLabel.for = "nws";
+    nwsLabel.innerText = "NWS County Code:"
+
+    const nwsInput = document.createElement('input');
+    nwsInputWrap.appendChild(nwsInput);
+    nwsInput.name = "nws";
+    nwsInput.type = "text";
+    nwsInput.setAttribute('id','nws');
 
     /* END Account Controls */
 

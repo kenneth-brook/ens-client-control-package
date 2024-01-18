@@ -1080,6 +1080,7 @@ function fillForm() {
     nwsInput.name = "nws";
     nwsInput.type = "text";
     nwsInput.setAttribute('id','nws');
+    nwsInput.value = `${singleGrab.nws}`;
 
     /* END Account Controls */
 

@@ -1,4 +1,4 @@
-const express = require('express');
+ const express = require('express');
 const serverless = require('serverless-http');
 const bodyParser = require('body-parser');
 const { Pool } = require('pg');
@@ -12,7 +12,7 @@ app.use(cors({ origin: true, credentials: true }));
 const pool = new Pool({
     user: 'ensclient',
     host: 'ens-client.cfzb4vlbttqg.us-east-2.rds.amazonaws.com',
-    database: 'ens-client',
+    database: 'postgres',
     password: 'gQ9Sf8cIczKhZiCswXXy',
     port: 5432,
     max: 20,
@@ -27,25 +27,32 @@ app.get('/', (req, res) => {
     res.status(200).send();
 });
 
-app.get('/clients', (req, res) => {
-    try {
-        const result = pool.query('SELECT * FROM public.clients');
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error executing query', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
+app.get('/clients', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM clients');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error executing query', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
 
-app.get('/clients/:id', async (req, res) => {
-    const { id } = req.params;
+app.get('/client/:id', async (req, res) => {
+    const cid = parseInt(req.params.id, 10);
+    console.log('Received ID:', cid);
+
     try {
-        const result = await pool.query('SELECT * FROM public.clients WHERE key = $1', [id]);
+        const result = await pool.query('SELECT * FROM clients WHERE id = $1', [cid]);
+        console.log('Query Result:', result.rows);
+
         if (result.rows.length === 0) {
-            res.status(404).json({ error: 'Not Found' });
-        } else {
-            res.json(result.rows[0]);
+            console.log('User not found');
+            return res.status(404).json({ error: `User ${cid} not found` });
         }
+
+        const client = result.rows[0];
+        console.log('User found:', client);
+        res.status(200).json(client);
     } catch (error) {
         console.error('Error executing query', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -61,7 +68,7 @@ app.post('/clients', async (req, res) => {
     const values = Object.values(formData);
 
     const query = {
-      text: `INSERT INTO form_data(${columns.join(', ')}) VALUES(${values.map((_, i) => `$${i + 1}`).join(', ')}) RETURNING *`,
+      text: `INSERT INTO clients(${columns.join(', ')}) VALUES(${values.map((_, i) => `$${i + 1}`).join(', ')}) RETURNING *`,
       values,
     };
 
@@ -80,8 +87,8 @@ app.post('/clients', async (req, res) => {
   }
 });
 
-app.put('/clients/:key', async (req, res) => {
-    const { key } = req.params; // Extract the key from the route parameter
+app.put('/clients/:id', async (req, res) => {
+    const { id } = req.params; // Extract the key from the route parameter
     const data = req.body;
 
     if (!data || Object.keys(data).length === 0) {
@@ -94,11 +101,11 @@ app.put('/clients/:key', async (req, res) => {
 
     try {
         const result = await pool.query(
-            `UPDATE public.clients
-             SET (${columns}) = (${placeholders})
-             WHERE key = $${values.length + 1}
-             RETURNING *`,
-            [...values, key]
+            `UPDATE clients
+            SET (${columns}) = (${placeholders})
+            WHERE id = $${values.length + 1}
+            RETURNING *`,
+            [...values, id]
         );
 
         if (result.rowCount === 0) {
@@ -108,7 +115,7 @@ app.put('/clients/:key', async (req, res) => {
         res.json(result.rows[0]);
     } catch (error) {
         console.error('Error executing query', error);
-        res.status(500).json({ error: 'Error updating data in the database' });
+        res.status(500).json({ error: 'Error updating data in the database', details: error.message });
     }
 });
 

@@ -114,7 +114,7 @@ const formPull = document.getElementById('fullForm');
 let singleGrab = "";
 
 function pageLaunch() {
-    fetch('/clients') 
+  fetch('https://client-control.911-ens-services.com/clients') 
   .then(response => { 
     if (response.ok) { 
       return response.json(); // Parse the response data as JSON 
@@ -136,13 +136,17 @@ function pageLaunch() {
   });
 }
 
-function selectClient(data) {
-    fetch(`/clients/${data}`) 
+function selectClient() {
+    const clientOpt = document.getElementById('clients');
+    let cId = clientOpt.value;
+    console.log(clientOpt.value)
+    console.log(cId)
+    fetch(`https://client-control.911-ens-services.com/client/${cId}`) 
   .then(response => { 
     if (response.ok) { 
       return response.json(); // Parse the response data as JSON 
     } else { 
-      throw new Error('API request failed'); 
+      throw new Error(`API request failed Status: ${response.status}`); 
     } 
   }) 
   .then(data => {

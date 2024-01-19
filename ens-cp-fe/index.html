@@ -107,14 +107,14 @@ button {
     </div>
     <form id="fullForm"></form>
     
-<script>
+  <script>
     const clientList = document.getElementById('clients');
 const flexButton = document.getElementById('flexButton');
 const formPull = document.getElementById('fullForm');
 let singleGrab = "";
 
 function pageLaunch() {
-    fetch('https://client-control.911-ens-services.com/clients') 
+    fetch('/clients') 
   .then(response => { 
     if (response.ok) { 
       return response.json(); // Parse the response data as JSON 
@@ -125,7 +125,6 @@ function pageLaunch() {
   .then(data => {
     data.forEach((client) => {
         let id = client.id;
-        console.log(id)
         let name = client.name;
         let opItem = `<option value=${id}>${name}</option>`;
         clientList.innerHTML += opItem;
@@ -137,17 +136,13 @@ function pageLaunch() {
   });
 }
 
-function selectClient() {
-    const clientOpt = document.getElementById('clients');
-    let cId = clientOpt.value;
-    console.log(clientOpt.value)
-    console.log(cId)
-    fetch(`https://client-control.911-ens-services.com/client/${cId}`) 
+function selectClient(data) {
+    fetch(`/clients/${data}`) 
   .then(response => { 
     if (response.ok) { 
       return response.json(); // Parse the response data as JSON 
     } else { 
-      throw new Error(`API request failed Status: ${response.status}`); 
+      throw new Error('API request failed'); 
     } 
   }) 
   .then(data => {
@@ -371,6 +366,23 @@ function newClient() {
       const opt = document.getElementById('plan');
       opt.innerHTML += data;
     })
+
+    /* */
+
+    const nwsInputWrap = document.createElement('div');
+    block2.appendChild(nwsInputWrap);
+    nwsInputWrap.className = "inputWrap";
+
+    const nwsLabel = document.createElement('label');
+    nwsInputWrap.appendChild(nwsLabel);
+    nwsLabel.for = "nws";
+    nwsLabel.innerText = "NWS County Code:"
+
+    const nwsInput = document.createElement('input');
+    nwsInputWrap.appendChild(nwsInput);
+    nwsInput.name = "nws";
+    nwsInput.type = "text";
+    nwsInput.setAttribute('id','nws');
 
     /* END Account Controls */
 
@@ -910,7 +922,7 @@ function enterClient(formPull) {
   console.log(json)
 
    // Send JSON object to the server
-   fetch("https://client-control.911-ens-services.com/clients", {
+   fetch("/clients", {
     method: 'POST',
     headers: {
         'Content-Type': 'application/JSON',
@@ -928,33 +940,34 @@ function enterClient(formPull) {
 });
 }
 
-async function updateClient(form) {
-  try {
-    const formData = new FormData(form);
-    const json = JSON.stringify(Object.fromEntries(formData));
+function updateClient(form) {
+  let formData = new FormData(form);
+  let object = {};
+  formData.forEach(function(value, key){
+    object[key] = value;
+  });
+  let json = JSON.stringify(object);
+  const lKey = singleGrab.key
 
-    const lKey = singleGrab.id;
-    console.log(lKey);
+  console.log(lKey)
 
-    const response = await fetch(`https://client-control.911-ens-services.com/clients/${lKey}`, {
-      method: 'PUT',
-      headers: {
+   // Send JSON object to the server
+   fetch(`/clients/${lKey}`, {
+    method: 'PUT',
+    headers: {
         'Content-Type': 'application/json',
-      },
-      body: json,
-    });
-
-    if (!response.ok) {
-      console.error('Request failed with status:', response.status);
-    } 
-    
-    const data = await response.json();
+    },
+    body: json,
+})
+.then(response => response.json())
+.then(data => {
     console.log('Success:', data);
     // Handle success, update UI, etc.
-  } catch (error) {
-    console.error('Error:', error.message);
+})
+.catch(error => {
+    console.error('Error:', error);
     // Handle error, show error message, etc.
-  }
+});
 }
 
 function fillForm() {
@@ -1160,6 +1173,24 @@ function fillForm() {
       opt.innerHTML += data;
     })
     planInput.value = `${singleGrab.plan}`;
+
+    /* */
+
+    const nwsInputWrap = document.createElement('div');
+    block2.appendChild(nwsInputWrap);
+    nwsInputWrap.className = "inputWrap";
+
+    const nwsLabel = document.createElement('label');
+    nwsInputWrap.appendChild(nwsLabel);
+    nwsLabel.for = "nws";
+    nwsLabel.innerText = "NWS County Code:"
+
+    const nwsInput = document.createElement('input');
+    nwsInputWrap.appendChild(nwsInput);
+    nwsInput.name = "nws";
+    nwsInput.type = "text";
+    nwsInput.setAttribute('id','nws');
+    nwsInput.value = `${singleGrab.nws}`;
 
     /* END Account Controls */
 
@@ -1726,8 +1757,8 @@ function fillForm() {
 
     /* END Database Translation Key */
 }
-    </script>
+  </script>
     
-    <script>pageLaunch()</script>
+  <script>pageLaunch()</script>
 </body>
 </html>

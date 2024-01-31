@@ -103,15 +103,20 @@ button {
             </select>
             <input type="submit" value="Select" />
         </form>
-        <button id="flexButton" onclick="event.preventDefault(), newClient()">New Client</button>
+        <div id=" buttonWrap">
+          <button id="flexButton" onclick="event.preventDefault(), newClient()">New Client</button>
+        </div>
     </div>
+    <form id="addOns"></form>
     <form id="fullForm"></form>
     
   <script>
     const clientList = document.getElementById('clients');
-const flexButton = document.getElementById('flexButton');
-const formPull = document.getElementById('fullForm');
-let singleGrab = "";
+    const flexButton = document.getElementById('flexButton');
+    const buttonWrap = document.getElementById('buttonWrap');
+    const addOns = document.getElementById('addOns');
+    const formPull = document.getElementById('fullForm');
+    let singleGrab = "";
 
 function pageLaunch() {
   fetch('https://client-control.911-ens-services.com/clients') 
@@ -139,8 +144,6 @@ function pageLaunch() {
 function selectClient() {
     const clientOpt = document.getElementById('clients');
     let cId = clientOpt.value;
-    console.log(clientOpt.value)
-    console.log(cId)
     fetch(`https://client-control.911-ens-services.com/client/${cId}`) 
   .then(response => { 
     if (response.ok) { 
@@ -151,7 +154,8 @@ function selectClient() {
   }) 
   .then(data => {
     singleGrab = data;
-    console.log(singleGrab)
+    userKey = data.key;
+    console.log(singleGrab);
     fillForm();
   }) 
   .catch(error => { 
@@ -160,9 +164,14 @@ function selectClient() {
   });
 
   flexButton.innerText = "Update";
-  flexButton.type = "submit"
+  flexButton.type = "submit";
   flexButton.form = formPull;
   flexButton.onclick = function() {event.preventDefault(), updateClient(formPull)};
+
+  const userButton = document.createElement('button');
+  buttonWrap.appendChild(userButton);
+  userButton.innerText = "Add User";
+  userButton.onclick = function() {event.preventDefault(), addUser(singleGrab)};
 }
 
 // Start new client form
@@ -989,13 +998,6 @@ function fillForm() {
     fullFormWrap.appendChild(block1);
     block1.className = "formRow";
 
-    /*const idInput = document.createElement('input');
-    block1.appendChild(idInput);
-    idInput.name = "id";
-    idInput.type = "hidden";
-    idInput.setAttribute('id','id');
-    idInput.value = `${singleGrab.id}`;*/
-
     const nameInputWrap = document.createElement('div');
     block1.appendChild(nameInputWrap);
     nameInputWrap.className = "inputWrap";
@@ -1760,6 +1762,12 @@ function fillForm() {
     zoneInput.value = `${singleGrab.zone}`;
 
     /* END Database Translation Key */
+}
+
+function addUser(singleGrab) {
+  const block1Title = document.createElement('h5');
+  addOns.appendChild(block1Title);
+  block1Title.innerText = `Add new user for ${singleGrab.name}`
 }
   </script>
     

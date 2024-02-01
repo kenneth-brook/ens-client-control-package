@@ -88,7 +88,7 @@ button {
 </head>
 <body>
     <header>
-        <img src="/Group20127.jpg" />
+        <img src="https://portal.911emergensee.com/img/Group127.jpg" />
         <h1>Consolidated Client Control Center</h1>
     </header>
     <div class="selectOpt">
@@ -1829,14 +1829,16 @@ function addUser(singleGrab) {
   invButton.onclick = function() {event.preventDefault(), sendInvite(addOns)};
 }
 
-function sendInvite(addOns) {
-    // Assuming 'addOns' is your form or contains your form
-    const formData = new FormData(addOns);
-    const formEntries = Array.from(formData.entries());
-    const formValues = formEntries.map(entry => `${entry[0]}: ${entry[1]}`);
-    const alertMessage = formValues.join('\n');
-
-    alert(alertMessage);
+function sendInvite(formElement) {
+    const formData = new FormData(formElement);
+    
+    fetch('/api/submit-form', { // Your API endpoint
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => console.log('Success:', data))
+    .catch((error) => console.error('Error:', error));
 }
   </script>
     

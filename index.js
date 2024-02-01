@@ -3,6 +3,7 @@ const serverless = require('serverless-http');
 const bodyParser = require('body-parser');
 const { Pool } = require('pg');
 const cors = require('cors');
+const sgMail = require('@sendgrid/mail');
 
 const app = express();
 const port = 3000;
@@ -119,7 +120,49 @@ app.put('/clients/:id', async (req, res) => {
     }
 });
 
+app.put('/register', async (req, res) => {
+  const { key, email, role } = req.body; // Extract user data from the request body
 
+  // Simple validation
+  if (!key || !email || !role) {
+      return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  try {
+    // Insert data into the database
+    const result = await pool.query(
+      'INSERT INTO users(key, email, role) VALUES($1, $2, $3) RETURNING *',
+      [key, email, role]
+    );
+
+    // Assuming you have a function to send emails
+    const registrationLink = `https://portal.911emergensee.com/register?key=${key}&email=${email}`;
+    await sendEmail(email, registrationLink); // Implement this function based on your email service
+
+    res.status(201).send({ message: 'User registered successfully', user: result.rows[0] });
+  } catch (error) {
+    console.error('Error registering user:', error);
+    res.status(500).send({ message: 'Error registering user' });
+  }
+});
+
+sgMail.setApiKey('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'); // Set your API key
+
+function sendEmail(to, link) {
+  const msg = {
+      to: to, // Recipient email address
+      from: 'registration@911emergensee.com', // Your email address
+      subject: 'Complete Your Registration',
+      text: `Please complete your registration by clicking on the link: ${link}`,
+      html: `Please complete your registration by clicking on the <a href="${link}">link</a>.`,
+  };
+
+  sgMail.send(msg).then(() => {
+      console.log('Email sent');
+  }).catch((error) => {
+      console.error(error);
+  });
+}
 
 module.exports.handler = serverless(app, {
     framework: 'express',

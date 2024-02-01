@@ -79,6 +79,7 @@ input {
 button {
     font-size: 2rem;
     padding: 5px 10px;
+    align-self: center;
 }
 
     
@@ -1760,6 +1761,82 @@ function addUser(singleGrab) {
   const block1Title = document.createElement('h5');
   addOns.appendChild(block1Title);
   block1Title.innerText = `Add new user for ${singleGrab.name}`
+
+  const block1 = document.createElement('div');
+  addOns.appendChild(block1);
+  block1.className = "formRow";
+
+  const uuidInput = document.createElement('input');
+  block1.appendChild(uuidInput);
+  uuidInput.name = "key";
+  uuidInput.type = "hidden";
+  uuidInput.value = `${singleGrab.key}`;
+
+  const emailInputWrap = document.createElement('div');
+  block1.appendChild(emailInputWrap);
+  emailInputWrap.className = "inputWrap";
+
+  const emailLabel = document.createElement('label');
+  emailInputWrap.appendChild(emailLabel);
+  emailLabel.for = "email";
+  emailLabel.innerText = "Email:"
+
+  const emailInput = document.createElement('input');
+  emailInputWrap.appendChild(emailInput);
+  emailInput.name = "email";
+  emailInput.type = "text";
+  emailInput.setAttribute('id','email');
+
+  const roleInputWrap = document.createElement('div');
+  block1.appendChild(roleInputWrap);
+  roleInputWrap.className = "inputWrap";
+
+  // Create the label for the dropdown
+  const roleLabel = document.createElement('label');
+  roleInputWrap.appendChild(roleLabel);
+  roleLabel.for = "role";
+  roleLabel.innerText = "Role:"
+
+  // Create the dropdown (select element)
+  const roleSelect = document.createElement('select');
+  roleInputWrap.appendChild(roleSelect);
+  roleSelect.name = "role";
+  roleSelect.id = "role";
+
+  // Option for Super Admin
+  const superAdminOption = document.createElement('option');
+  superAdminOption.value = "Super Admin";
+  superAdminOption.text = "Super Admin";
+  roleSelect.appendChild(superAdminOption);
+
+  // Option for Admin
+  const adminOption = document.createElement('option');
+  adminOption.value = "Admin";
+  adminOption.text = "Admin";
+  roleSelect.appendChild(adminOption);
+
+  // Option for User
+  const userOption = document.createElement('option');
+  userOption.value = "User";
+  userOption.text = "User";
+  roleSelect.appendChild(userOption);
+
+  const invButton = document.createElement('button');
+  block1.appendChild(invButton);
+  invButton.innerText = "Update";
+  invButton.type = "submit";
+  invButton.form = formPull;
+  invButton.onclick = function() {event.preventDefault(), sendInvite(addOns)};
+}
+
+function sendInvite(addOns) {
+    // Assuming 'addOns' is your form or contains your form
+    const formData = new FormData(addOns);
+    const formEntries = Array.from(formData.entries());
+    const formValues = formEntries.map(entry => `${entry[0]}: ${entry[1]}`);
+    const alertMessage = formValues.join('\n');
+
+    alert(alertMessage);
 }
   </script>
     

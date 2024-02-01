@@ -11,10 +11,6 @@ html {
     box-sizing: border-box;
 }
 
-* {
-    margin: 0;
-}
-
 header {
     width: 100%;
     text-align: center;
@@ -74,7 +70,7 @@ input {
     margin-bottom: 10px;
 }
 
-#fullForm h5 {
+#fullForm h5, #addOns h5 {
     font-size: 1.8rem;
     text-align: center;
     padding: 15px 0;
@@ -103,7 +99,7 @@ button {
             </select>
             <input type="submit" value="Select" />
         </form>
-        <div id=" buttonWrap">
+        <div id="buttonWrap">
           <button id="flexButton" onclick="event.preventDefault(), newClient()">New Client</button>
         </div>
     </div>

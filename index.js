@@ -146,7 +146,8 @@ app.put('/register', async (req, res) => {
   }
 });
 
-sgMail.setApiKey('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'); // Set your API key
+const mailKey = process.env.MAIL_KEY
+sgMail.setApiKey(`${mailKey}`); // Set your API key
 
 function sendEmail(to, link) {
   const msg = {

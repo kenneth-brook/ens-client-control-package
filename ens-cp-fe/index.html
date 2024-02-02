@@ -1829,14 +1829,30 @@ function addUser(singleGrab) {
   invButton.onclick = function() {event.preventDefault(), sendInvite(addOns)};
 }
 
-function sendInvite(formElement) {
-    const formData = new FormData(formElement);
-    
-    fetch('/api/submit-form', { // Your API endpoint
-        method: 'POST',
-        body: formData
+function sendInvite(addOns) {
+    // Convert FormData to a plain object
+    const formData = new FormData(addOns);
+    const formObject = {};
+    formData.forEach((value, key) => { formObject[key] = value; });
+
+    // Convert the form object to a JSON string
+    const json = JSON.stringify(formObject);
+    console.log(json);
+
+    fetch('/register', { 
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: json,
     })
-    .then(response => response.json())
+    .then(response => {
+        // Check if the response is OK (status in the range 200-299)
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
     .then(data => console.log('Success:', data))
     .catch((error) => console.error('Error:', error));
 }

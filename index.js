@@ -3,7 +3,6 @@ const serverless = require('serverless-http');
 const bodyParser = require('body-parser');
 const { Pool } = require('pg');
 const cors = require('cors');
-const sgMail = require('@sendgrid/mail');
 
 const app = express();
 const port = 3000;
@@ -146,22 +145,24 @@ app.put('/register', async (req, res) => {
   }
 });
 
-const mailKey = process.env.MAIL_KEY
-sgMail.setApiKey(`${mailKey}`); // Set your API key
+console.log(`Using MAIL_KEY: ${process.env.MAIL_KEY}`);
 
-function sendEmail(to, link) {
+function sendEmail(email, registrationLink) {
+  const sgMail = require('@sendgrid/mail');
+  sgMail.setApiKey(process.env.MAIL_KEY); // Set your API key
+
   const msg = {
-      to: to, // Recipient email address
+      to: email, // Recipient email address
       from: 'registration@911emergensee.com', // Your email address
       subject: 'Complete Your Registration',
-      text: `Please complete your registration by clicking on the link: ${link}`,
-      html: `Please complete your registration by clicking on the <a href="${link}">link</a>.`,
+      text: `Please complete your registration by clicking on the link: ${registrationLink}`,
+      html: `Please complete your registration by clicking on the <a href="${registrationLink}">link</a>.`,
   };
 
   sgMail.send(msg).then(() => {
       console.log('Email sent');
   }).catch((error) => {
-      console.error(error);
+      console.error('mail ............. ' + error);
   });
 }
 

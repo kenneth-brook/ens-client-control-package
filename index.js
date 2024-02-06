@@ -134,10 +134,6 @@ app.put('/register', async (req, res) => {
       [key, email, role]
     );
 
-    // Assuming you have a function to send emails
-    const registrationLink = `https://portal.911emergensee.com/register?key=${key}&email=${email}`;
-    await sendEmail(email, registrationLink); // Implement this function based on your email service
-
     res.status(201).send({ message: 'User registered successfully', user: result.rows[0] });
   } catch (error) {
     console.error('Error registering user:', error);
@@ -145,27 +141,6 @@ app.put('/register', async (req, res) => {
   }
 });
 
-console.log(`Using MAIL_KEY: ${process.env.MAIL_KEY}`);
-
-function sendEmail(email, registrationLink) {
-  const sgMail = require('@sendgrid/mail');
-  sgMail.setApiKey(process.env.MAIL_KEY); // Set your API key
-
-  const msg = {
-      to: email, // Recipient email address
-      from: 'registration@911emergensee.com', // Your email address
-      subject: 'Complete Your Registration',
-      text: `Please complete your registration by clicking on the link: ${registrationLink}`,
-      html: `Please complete your registration by clicking on the <a href="${registrationLink}">link</a>.`,
-  };
-
-  sgMail.send(msg).then(() => {
-      console.log('Email sent');
-  }).catch((error) => {
-      console.error('mail ............. ' + error);
-  });
-}
-
 module.exports.handler = serverless(app, {
-    framework: 'express',
-  });
+  framework: 'express',
+});

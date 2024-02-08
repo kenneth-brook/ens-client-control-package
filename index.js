@@ -20,7 +20,7 @@ const pool = new Pool({
 
 app.use(bodyParser.json());
 
-app.use(express.static('ens-cp-fe'));
+app.use('/', express.static('ens-cp-fe'));
 
 app.get('/', (req, res) => {
     res.status(200).send();

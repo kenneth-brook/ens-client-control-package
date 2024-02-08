@@ -1,11 +1,10 @@
- const express = require('express');
+const express = require('express');
 const serverless = require('serverless-http');
 const bodyParser = require('body-parser');
 const { Pool } = require('pg');
 const cors = require('cors');
 
 const app = express();
-const port = 3000;
 
 app.use(cors({ origin: true, credentials: true }));
 

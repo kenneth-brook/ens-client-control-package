@@ -3,14 +3,18 @@ const serverless = require('serverless-http');
 const bodyParser = require('body-parser');
 const { Pool } = require('pg');
 const cors = require('cors');
+const sgMail = require('@sendgrid/mail');
+
+require('dotenv').config();
 
 const app = express();
+const port = 3000;
 
 app.use(cors({ origin: true, credentials: true }));
 
 const pool = new Pool({
     user: 'ensclient',
-    host: 'ens-client.cfzb4vlbttqg.us-east-2.rds.amazonaws.com',
+    host: 'proxy-1708523936753-ens-client.proxy-cfzb4vlbttqg.us-east-2.rds.amazonaws.com',
     database: 'postgres',
     password: 'gQ9Sf8cIczKhZiCswXXy',
     port: 5432,
@@ -18,12 +22,12 @@ const pool = new Pool({
     ssl: true,
 });
 
-app.use(bodyParser.json());
+app.use(express.static('ens-cp-fe'));
 
-app.use('/', express.static('ens-cp-fe'));
+app.use(express.json());
 
 app.get('/', (req, res) => {
-    res.status(200).send();
+    res.sendFile(__dirname + '/ens-cp-fe/index.html');
 });
 
 app.get('/clients', async (req, res) => {
@@ -118,12 +122,15 @@ app.put('/clients/:id', async (req, res) => {
     }
 });
 
+// Set your SendGrid API Key
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 app.put('/register', async (req, res) => {
   const { key, email, role } = req.body; // Extract user data from the request body
 
   // Simple validation
   if (!key || !email || !role) {
-      return res.status(400).json({ error: "Missing required fields" });
+    return res.status(400).json({ error: "Missing required fields" });
   }
 
   try {
@@ -133,10 +140,25 @@ app.put('/register', async (req, res) => {
       [key, email, role]
     );
 
+    // Create the continuation URL
+    const continuationUrl = `https://portal.911emergensee.com/register/?email=${encodeURIComponent(email)}&key=${encodeURIComponent(key)}`;
+
+    // Prepare the email data
+    const msg = {
+      to: email, // Recipient
+      from: 'your-email@example.com', // Change to your verified sender
+      subject: 'Complete Your Registration',
+      text: `Hi there! You've been registered with the role: ${role}. To complete your registration, please follow this link: ${continuationUrl}`,
+      html: `<strong>Hi there! You've been registered with the role: ${role}.</strong> <br> To complete your registration, please <a href="${continuationUrl}">click here</a>.`,
+    };
+
+    // Send the email
+    await sgMail.send(msg);
+
     res.status(201).send({ message: 'User registered successfully', user: result.rows[0] });
   } catch (error) {
-    console.error('Error registering user:', error);
-    res.status(500).send({ message: 'Error registering user' });
+    console.error('Error registering user or sending email:', error);
+    res.status(500).send({ message: 'Error registering user or sending email' });
   }
 });
 

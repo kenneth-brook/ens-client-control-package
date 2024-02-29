@@ -1,6 +1,5 @@
 const express = require('express');
 const serverless = require('serverless-http');
-const bodyParser = require('body-parser');
 const { Pool } = require('pg');
 const cors = require('cors');
 const sgMail = require('@sendgrid/mail');

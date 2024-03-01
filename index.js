@@ -21,7 +21,7 @@ const pool = new Pool({
     ssl: true,
 });
 
-app.use(express.static('ens-cp-fe'));
+app.use(express.static('ens-cp-fe')); 
 
 app.use(express.json());
 
@@ -152,7 +152,14 @@ app.put('/register', async (req, res) => {
     };
 
     // Send the email
-    await sgMail.send(msg);
+    sgMail
+      .send(msg)
+      .then(() => {
+        console.log('Email sent')
+      })
+      .catch((error) => {
+        console.error(error)
+      })
 
     res.status(201).send({ message: 'User registered successfully', user: result.rows[0] });
   } catch (error) {

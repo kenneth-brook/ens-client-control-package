@@ -1,13 +1,13 @@
 const express = require('express');
 const serverless = require('serverless-http');
 const { Pool } = require('pg');
-const cors = require('cors');
-const sgMail = require('@sendgrid/mail');
-
-require('dotenv').config();
+const AWS = require('aws-sdk');
 
 const app = express();
 const port = 3000;
+
+AWS.config.update({region: 'us-east-2'});
+const ses = new AWS.SES({apiVersion: '2010-12-01'});
 
 app.use(cors({ origin: true, credentials: true }));
 
@@ -121,9 +121,6 @@ app.put('/clients/:id', async (req, res) => {
     }
 });
 
-// Set your SendGrid API Key
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
 app.put('/register', async (req, res) => {
   const { key, email, role } = req.body; // Extract user data from the request body
 
@@ -141,25 +138,36 @@ app.put('/register', async (req, res) => {
 
     // Create the continuation URL
     const continuationUrl = `https://portal.911emergensee.com/register/?email=${encodeURIComponent(email)}&key=${encodeURIComponent(key)}`;
+    
+    console.log(email)
 
-    // Prepare the email data
-    const msg = {
-      to: email, // Recipient
-      from: 'your-email@example.com', // Change to your verified sender
-      subject: 'Complete Your Registration',
-      text: `Hi there! You've been registered with the role: ${role}. To complete your registration, please follow this link: ${continuationUrl}`,
-      html: `<strong>Hi there! You've been registered with the role: ${role}.</strong> <br> To complete your registration, please <a href="${continuationUrl}">click here</a>.`,
+    // Prepare the email data for SES
+    const params = {
+      Destination: {
+        ToAddresses: [email]
+      },
+      Message: {
+        Body: {
+          Html: {
+            Charset: "UTF-8",
+            Data: `<strong>Hi there! You've been registered with the role: ${role}.</strong> <br> To complete your registration, please <a href="${continuationUrl}">click here</a>.`
+          },
+          Text: {
+            Charset: "UTF-8",
+            Data: `Hi there! You've been registered with the role: ${role}. To complete your registration, please follow this link: ${continuationUrl}`
+          }
+        },
+        Subject: {
+          Charset: 'UTF-8',
+          Data: 'Complete Your Registration'
+        }
+      },
+      Source: 'registration@911emergensee.com', // Replace with your "From" address. This address must be verified with Amazon SES.
     };
 
-    // Send the email
-    sgMail
-      .send(msg)
-      .then(() => {
-        console.log('Email sent')
-      })
-      .catch((error) => {
-        console.error(error)
-      })
+    // Send the email via SES
+    await ses.sendEmail(params).promise();
+    console.log('Email sent');
 
     res.status(201).send({ message: 'User registered successfully', user: result.rows[0] });
   } catch (error) {

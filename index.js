@@ -1,6 +1,7 @@
 const express = require('express');
 const serverless = require('serverless-http');
 const { Pool } = require('pg');
+const cors = require('cors');
 const AWS = require('aws-sdk');
 
 const app = express();
@@ -138,8 +139,6 @@ app.put('/register', async (req, res) => {
 
     // Create the continuation URL
     const continuationUrl = `https://portal.911emergensee.com/register/?email=${encodeURIComponent(email)}&key=${encodeURIComponent(key)}`;
-    
-    console.log(email)
 
     // Prepare the email data for SES
     const params = {
@@ -162,7 +161,7 @@ app.put('/register', async (req, res) => {
           Data: 'Complete Your Registration'
         }
       },
-      Source: 'registration@911emergensee.com', // Replace with your "From" address. This address must be verified with Amazon SES.
+      Source: 'registration@911emergensee.com',
     };
 
     // Send the email via SES

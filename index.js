@@ -16,7 +16,8 @@ app.use(cors({ origin: true, credentials: true }));
 
 const pool = new Pool({
     user: 'ensclient',
-    host: 'proxy-1708523936753-ens-client.proxy-cfzb4vlbttqg.us-east-2.rds.amazonaws.com',
+    //host: 'proxy-1708523936753-ens-client.proxy-cfzb4vlbttqg.us-east-2.rds.amazonaws.com',
+    host: 'ens-client.cfzb4vlbttqg.us-east-2.rds.amazonaws.com',
     database: 'postgres',
     password: 'gQ9Sf8cIczKhZiCswXXy',
     port: 5432,

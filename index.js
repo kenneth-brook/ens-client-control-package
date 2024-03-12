@@ -7,8 +7,10 @@ const AWS = require('aws-sdk');
 const app = express();
 const port = 3000;
 
-AWS.config.update({region: 'us-east-2'});
-const ses = new AWS.SES({apiVersion: '2010-12-01'});
+const ses = new AWS.SES({
+  apiVersion: '2010-12-01',
+  region: 'us-east-1'
+});
 
 app.use(cors({ origin: true, credentials: true }));
 

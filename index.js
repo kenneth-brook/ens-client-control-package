@@ -9,7 +9,7 @@ const port = 3000;
 
 const ses = new AWS.SES({
   apiVersion: '2010-12-01',
-  region: 'us-east-1'
+  region: 'us-east-2'
 });
 
 app.use(cors({ origin: true, credentials: true }));

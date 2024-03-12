@@ -164,6 +164,8 @@ app.put('/register', async (req, res) => {
       Source: 'registration@911emergensee.com',
     };
 
+    console.log(params)
+
     // Send the email via SES
     await ses.sendEmail(params).promise();
     console.log('Email sent');

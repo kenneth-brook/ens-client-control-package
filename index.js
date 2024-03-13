@@ -184,58 +184,84 @@ app.put('/register', async (req, res) => {
 });
 
 app.put('/update-client', async (req, res) => {
-  const { key, email } = req.body; // Extract key and email from the request body
-  // Assume the rest of the form data is also in the request body
+  // Extracting form data from the request body
+  const { firstName, lastName, phoneNumber, department, city, county, password } = req.body;
 
+  // Assuming `key` and `email` are used to find the client to update
+  const { key, email } = req.body;
+
+  // Validation example: Ensure the required fields are present
   if (!key || !email) {
       return res.status(400).json({ error: "Missing key or email" });
   }
 
+  // Additional validations here, such as for the password
+
+  // If updating the password, hash it before storing
+  let hashedPassword;
+  if (password) {
+      hashedPassword = await bcrypt.hash(password, 10); // Assuming bcrypt is set up for password hashing
+  }
+
   try {
-      // First, find the user by key and email to ensure they exist
-      const findUserResult = await pool.query('SELECT * FROM users WHERE key = $1 AND email = $2', [key, email]);
+      // Constructing the SQL query dynamically based on provided fields
+      // This example shows a simplified way to dynamically build an update query.
+      // In a real application, consider security implications and validation.
+      let query = 'UPDATE clients SET ';
+      const queryValues = [];
+      let setParts = [];
 
-      if (findUserResult.rows.length === 0) {
-          // No user found with the given key and email
-          return res.status(404).json({ error: "User not found" });
+      if (firstName) {
+          queryValues.push(firstName);
+          setParts.push(`fname = $${queryValues.length}`);
       }
 
-      const clientToUpdate = findUserResult.rows[0];
-      const updateData = [clientToUpdate.id]; // Assuming you have a unique ID for each client
-      const querySetParts = [];
-      
-      // If there's a new password, hash it
-      if (req.body.password) {
-          const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
-          querySetParts.push(`password = $${updateData.length + 1}`);
-          updateData.push(hashedPassword);
+      if (lastName) {
+          queryValues.push(lastName);
+          setParts.push(`lname = $${queryValues.length}`);
       }
 
-      // Add other fields to updateData and querySetParts as needed
-      // Example for another field: firstName
-      if (req.body.firstName) {
-          querySetParts.push(`first_name = $${updateData.length + 1}`);
-          updateData.push(req.body.firstName);
+      if (phoneNumber) {
+        queryValues.push(phoneNumber);
+        setParts.push(`phone = $${queryValues.length}`);
       }
 
-      // Construct the SET part of the SQL query based on provided fields
-      const setClause = querySetParts.join(', ');
-
-      if (setClause) {
-          const updateResult = await pool.query(
-              `UPDATE users SET ${setClause} WHERE id = $1 RETURNING *`,
-              updateData
-          );
-
-          res.json({
-              message: "Client updated successfully",
-              client: updateResult.rows[0]
-          });
-      } else {
-          res.status(400).json({ error: "No update fields provided" });
+      if (department) {
+        queryValues.push(department);
+        setParts.push(`department = $${queryValues.length}`);
       }
+
+      if (city) {
+        queryValues.push(city);
+        setParts.push(`city = $${queryValues.length}`);
+      }
+
+      if (county) {
+        queryValues.push(county);
+        setParts.push(`county = $${queryValues.length}`);
+      }
+
+      // Add other fields similarly...
+      if (hashedPassword) {
+          queryValues.push(hashedPassword);
+          setParts.push(`password = $${queryValues.length}`);
+      }
+
+      query += setParts.join(', ');
+      query += ` WHERE key = $${queryValues.length + 1} AND email = $${queryValues.length + 2}`;
+      queryValues.push(key, email);
+
+      // Execute the query
+      const result = await pool.query(query, queryValues);
+
+      if (result.rowCount === 0) {
+          // No client updated, indicating the key/email combination wasn't found
+          return res.status(404).json({ error: "Client not found" });
+      }
+
+      res.json({ message: "Client updated successfully" });
   } catch (error) {
-      console.error('Error updating client information:', error);
+      console.error('Error updating client:', error);
       res.status(500).json({ error: "Internal Server Error" });
   }
 });

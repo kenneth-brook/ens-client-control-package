@@ -4,6 +4,9 @@ const { Pool } = require('pg');
 const cors = require('cors');
 const AWS = require('aws-sdk');
 
+const bcrypt = require('bcrypt');
+const saltRounds = 10; // Cost factor for hashing
+
 const app = express();
 const port = 3000;
 
@@ -177,6 +180,63 @@ app.put('/register', async (req, res) => {
   } catch (error) {
     console.error('Error registering user or sending email:', error);
     res.status(500).send({ message: 'Error registering user or sending email' });
+  }
+});
+
+app.put('/update-client', async (req, res) => {
+  const { key, email } = req.body; // Extract key and email from the request body
+  // Assume the rest of the form data is also in the request body
+
+  if (!key || !email) {
+      return res.status(400).json({ error: "Missing key or email" });
+  }
+
+  try {
+      // First, find the user by key and email to ensure they exist
+      const findUserResult = await pool.query('SELECT * FROM users WHERE key = $1 AND email = $2', [key, email]);
+
+      if (findUserResult.rows.length === 0) {
+          // No user found with the given key and email
+          return res.status(404).json({ error: "User not found" });
+      }
+
+      const clientToUpdate = findUserResult.rows[0];
+      const updateData = [clientToUpdate.id]; // Assuming you have a unique ID for each client
+      const querySetParts = [];
+      
+      // If there's a new password, hash it
+      if (req.body.password) {
+          const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
+          querySetParts.push(`password = $${updateData.length + 1}`);
+          updateData.push(hashedPassword);
+      }
+
+      // Add other fields to updateData and querySetParts as needed
+      // Example for another field: firstName
+      if (req.body.firstName) {
+          querySetParts.push(`first_name = $${updateData.length + 1}`);
+          updateData.push(req.body.firstName);
+      }
+
+      // Construct the SET part of the SQL query based on provided fields
+      const setClause = querySetParts.join(', ');
+
+      if (setClause) {
+          const updateResult = await pool.query(
+              `UPDATE users SET ${setClause} WHERE id = $1 RETURNING *`,
+              updateData
+          );
+
+          res.json({
+              message: "Client updated successfully",
+              client: updateResult.rows[0]
+          });
+      } else {
+          res.status(400).json({ error: "No update fields provided" });
+      }
+  } catch (error) {
+      console.error('Error updating client information:', error);
+      res.status(500).json({ error: "Internal Server Error" });
   }
 });
 

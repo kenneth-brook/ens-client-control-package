@@ -4,7 +4,7 @@ const { Pool } = require('pg');
 const cors = require('cors');
 const AWS = require('aws-sdk');
 
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const saltRounds = 10; // Cost factor for hashing
 
 const app = express();
@@ -207,7 +207,7 @@ app.put('/update-user', async (req, res) => {
       // Constructing the SQL query dynamically based on provided fields
       // This example shows a simplified way to dynamically build an update query.
       // In a real application, consider security implications and validation.
-      let query = 'UPDATE clients SET ';
+      let query = 'UPDATE users SET ';
       const queryValues = [];
       let setParts = [];
 

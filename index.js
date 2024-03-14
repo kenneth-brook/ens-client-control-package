@@ -183,7 +183,7 @@ app.put('/register', async (req, res) => {
   }
 });
 
-app.put('/update-client', async (req, res) => {
+app.put('/update-user', async (req, res) => {
   // Extracting form data from the request body
   const { firstName, lastName, phoneNumber, department, city, county, password } = req.body;
 

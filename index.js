@@ -15,7 +15,7 @@ const ses = new AWS.SES({
   region: 'us-east-2'
 });
 
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({ origin: '*', credentials: true }));
 
 const pool = new Pool({
     user: 'ensclient',

@@ -17,8 +17,8 @@ const ses = new AWS.SES({
 
 app.use(cors({
   origin: (origin, callback) => {
-    const allowedOrigins = ['portal.911emergensee.com']; // Add your domains here // Your allowed origins
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    const allowedOrigins = ['https://portal.911emergensee.com']; // Add your domains here // Your allowed origins
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('CORS not allowed'));
@@ -26,6 +26,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'PUT', 'POST', 'OPTIONS', 'DELETE'], // Explicitly specify allowed methods
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], 
 }));
 
 const pool = new Pool({

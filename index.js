@@ -15,7 +15,18 @@ const ses = new AWS.SES({
   region: 'us-east-2'
 });
 
-app.use(cors({ origin: '*', credentials: true }));
+app.use(cors({
+  origin: (origin, callback) => {
+    const allowedOrigins = ['portal.911emergensee.com']; // Add your domains here // Your allowed origins
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'PUT', 'POST', 'OPTIONS', 'DELETE'], // Explicitly specify allowed methods
+}));
 
 const pool = new Pool({
     user: 'ensclient',

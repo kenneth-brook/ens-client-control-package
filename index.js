@@ -10,24 +10,18 @@ const saltRounds = 10; // Cost factor for hashing
 const app = express();
 const port = 3000;
 
+app.use(cors({
+  origin: '*', // Adjust according to your needs
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 const ses = new AWS.SES({
   apiVersion: '2010-12-01',
   region: 'us-east-2'
 });
 
-app.use(cors({
-  origin: (origin, callback) => {
-    const allowedOrigins = ['https://portal.911emergensee.com']; // Add your domains here // Your allowed origins
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('CORS not allowed'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'PUT', 'POST', 'OPTIONS', 'DELETE'], // Explicitly specify allowed methods
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], 
-}));
+
 
 const pool = new Pool({
     user: 'ensclient',
@@ -195,7 +189,13 @@ app.put('/register', async (req, res) => {
   }
 });
 
-app.put('/update-user', async (req, res) => {
+const corsOptions = {
+  origin: "https://portal.911emergensee.com", // Adjust as necessary
+  methods: ['PUT'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.put('/update-user', cors(corsOptions), async (req, res) => {
   // Extracting form data from the request body
   const { firstName, lastName, phoneNumber, department, city, county, password } = req.body;
 

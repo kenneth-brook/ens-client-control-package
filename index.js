@@ -10,6 +10,9 @@ const saltRounds = 10;
 const app = express();
 const port = 3000;
 
+const jwt = require('jsonwebtoken');
+const jwtSecretKey = '3ea4cfeb-a743-43e1-828c-5aebda66b49c';
+
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -21,7 +24,25 @@ const ses = new AWS.SES({
   region: 'us-east-2'
 });
 
+const verifyToken = (req, res, next) => {
+  // Get the token from the Authorization header
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
+  if (token == null) {
+      return res.status(401).json({ error: 'No token provided' });
+  }
+
+  jwt.verify(token, jwtSecretKey, (err, user) => {
+      if (err) {
+          return res.status(403).json({ error: 'Token is not valid' });
+      }
+
+      // Add user to request
+      req.user = user;
+      next();
+  });
+};
 
 const pool = new Pool({
     user: 'ensclient',
@@ -256,6 +277,52 @@ app.put('/update-user', cors(corsOptions), async (req, res) => {
       console.error('Error updating client:', error);
       res.status(500).json({ error: "Internal Server Error" });
   }
+});
+
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  try {
+      // Fetch user from the database
+      const queryResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+      const user = queryResult.rows[0];
+
+      if (!user) {
+          return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Verify password
+      const isMatch = await bcrypt.compare(password, user.password);
+
+      if (!isMatch) {
+          return res.status(401).json({ error: 'Invalid credentials' });
+      }
+
+      // User authenticated, create and sign the JWT
+      const token = jwt.sign(
+          { userId: user.id, email: user.email, role: user.role },
+          jwtSecretKey,
+          { expiresIn: '1h' } // Token expires in 1 hour
+      );
+
+      res.status(200).json({
+          message: 'Login successful',
+          token: token,
+          user: { id: user.id, email: user.email, role: user.role }
+      });
+
+  } catch (error) {
+      console.error('Error during login:', error);
+      res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/protected-route', verifyToken, (req, res) => {
+  res.json({ message: 'This is a protected route', user: req.user });
 });
 
 module.exports.handler = serverless(app, {

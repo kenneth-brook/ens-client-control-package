@@ -312,7 +312,7 @@ app.post('/login', async (req, res) => {
       res.status(200).json({
           message: 'Login successful',
           token: token,
-          user: { id: user.id, email: user.email, role: user.role }
+          user: { id: user.id, email: user.email, role: user.role, key: user.key, fname: user.fname, lname: user.lname, phone: user.phone }
       });
 
   } catch (error) {

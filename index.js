@@ -5,13 +5,13 @@ const cors = require('cors');
 const AWS = require('aws-sdk');
 
 const bcrypt = require('bcryptjs');
-const saltRounds = 10; // Cost factor for hashing
+const saltRounds = 10;
 
 const app = express();
 const port = 3000;
 
 app.use(cors({
-  origin: '*', // Adjust according to your needs
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -25,7 +25,6 @@ const ses = new AWS.SES({
 
 const pool = new Pool({
     user: 'ensclient',
-    //host: 'proxy-1708523936753-ens-client.proxy-cfzb4vlbttqg.us-east-2.rds.amazonaws.com',
     host: 'ens-client-v2.cfzb4vlbttqg.us-east-2.rds.amazonaws.com',
     database: 'postgres',
     password: 'gQ9Sf8cIczKhZiCswXXy',
@@ -78,7 +77,6 @@ app.post('/clients', async (req, res) => {
     try {
     const formData = req.body;
 
-    // Assuming you have a table named 'form_data' with corresponding columns
     const columns = Object.keys(formData);
     const values = Object.values(formData);
 
@@ -103,7 +101,7 @@ app.post('/clients', async (req, res) => {
 });
 
 app.put('/clients/:id', async (req, res) => {
-    const { id } = req.params; // Extract the key from the route parameter
+    const { id } = req.params;
     const data = req.body;
 
     if (!data || Object.keys(data).length === 0) {
@@ -135,24 +133,20 @@ app.put('/clients/:id', async (req, res) => {
 });
 
 app.put('/register', async (req, res) => {
-  const { key, email, role } = req.body; // Extract user data from the request body
+  const { key, email, role } = req.body;
 
-  // Simple validation
   if (!key || !email || !role) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
   try {
-    // Insert data into the database
     const result = await pool.query(
       'INSERT INTO users(key, email, role) VALUES($1, $2, $3) RETURNING *',
       [key, email, role]
     );
 
-    // Create the continuation URL
     const continuationUrl = `https://portal.911emergensee.com/register/?email=${encodeURIComponent(email)}&key=${encodeURIComponent(key)}`;
 
-    // Prepare the email data for SES
     const params = {
       Destination: {
         ToAddresses: [email]
@@ -178,7 +172,6 @@ app.put('/register', async (req, res) => {
 
     console.log(params)
 
-    // Send the email via SES
     await ses.sendEmail(params).promise();
     console.log('Email sent');
 
@@ -190,35 +183,25 @@ app.put('/register', async (req, res) => {
 });
 
 const corsOptions = {
-  origin: "https://portal.911emergensee.com", // Adjust as necessary
+  origin: "https://portal.911emergensee.com",
   methods: ['PUT'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 app.put('/update-user', cors(corsOptions), async (req, res) => {
-  // Extracting form data from the request body
   const { firstName, lastName, phoneNumber, department, city, county, password } = req.body;
-
-  // Assuming `key` and `email` are used to find the client to update
   const { key, email } = req.body;
 
-  // Validation example: Ensure the required fields are present
   if (!key || !email) {
       return res.status(400).json({ error: "Missing key or email" });
   }
 
-  // Additional validations here, such as for the password
-
-  // If updating the password, hash it before storing
   let hashedPassword;
   if (password) {
-      hashedPassword = await bcrypt.hash(password, 10); // Assuming bcrypt is set up for password hashing
+      hashedPassword = await bcrypt.hash(password, 10);
   }
 
   try {
-      // Constructing the SQL query dynamically based on provided fields
-      // This example shows a simplified way to dynamically build an update query.
-      // In a real application, consider security implications and validation.
       let query = 'UPDATE users SET ';
       const queryValues = [];
       let setParts = [];
@@ -253,7 +236,6 @@ app.put('/update-user', cors(corsOptions), async (req, res) => {
         setParts.push(`county = $${queryValues.length}`);
       }
 
-      // Add other fields similarly...
       if (hashedPassword) {
           queryValues.push(hashedPassword);
           setParts.push(`password = $${queryValues.length}`);
@@ -263,11 +245,9 @@ app.put('/update-user', cors(corsOptions), async (req, res) => {
       query += ` WHERE key = $${queryValues.length + 1} AND email = $${queryValues.length + 2}`;
       queryValues.push(key, email);
 
-      // Execute the query
       const result = await pool.query(query, queryValues);
 
       if (result.rowCount === 0) {
-          // No client updated, indicating the key/email combination wasn't found
           return res.status(404).json({ error: "Client not found" });
       }
 

@@ -94,6 +94,23 @@ app.get('/client/:id', async (req, res) => {
     }
 });
 
+app.get('/boot-strap-client/:clientKey', async (req, res) => {
+  const clientKey = req.params.clientKey;
+
+  try {
+    const client = await pool.query('SELECT * FROM clients WHERE key = $1', [clientKey]);
+
+    if (client.rows.length === 0) {
+      res.status(404).json({ error: 'Client not found' });
+    } else {
+      res.json(client.rows[0]);
+    }
+  } catch (error) {
+    console.error('Error executing query', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 app.post('/clients', async (req, res) => {
     try {
     const formData = req.body;

@@ -54,8 +54,7 @@ const pool = new Pool({
     ssl: true,
 });
 
-const year = new Date().getFullYear();
-const clientKey = req.params.clientKey;
+let clientKey
 
 const pool2 = new Pool({
   user: 'ensahost_client',
@@ -110,7 +109,7 @@ app.get('/client/:id', async (req, res) => {
 });
 
 app.get('/boot-strap-client/:clientKey', async (req, res) => {
-  const clientKey = req.params.clientKey;
+  clientKey = req.params.clientKey;
 
   try {
     const client = await pool.query('SELECT * FROM clients WHERE key = $1', [clientKey]);
@@ -354,6 +353,9 @@ app.post('/login', async (req, res) => {
 });
 
 app.get('fullPull', async (req, res) => {
+  const year = new Date().getFullYear();
+clientKey = req.params.clientKey;
+
   try {
     const client = await pool2.query(`SELECT * FROM client_data_${year}`);
 

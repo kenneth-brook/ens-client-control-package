@@ -54,6 +54,21 @@ const pool = new Pool({
     ssl: true,
 });
 
+const year = new Date().getFullYear();
+const clientKey = req.params.clientKey;
+
+const pool2 = new Pool({
+  user: 'ensahost_client',
+  host: `client-${clientKey}.cfzb4vlbttqg.us-east-2.rds.amazonaws.com`,
+  database: 'postgres',
+  password: 'ZCK,tCI8lv4o',
+  port: 5432,
+  max: 20,
+  ssl: {
+    rejectUnauthorized: false, // Ignore unauthorized SSL errors (not recommended for production)
+  },
+});
+
 app.use(express.static('ens-cp-fe')); 
 
 app.use(express.json());
@@ -337,6 +352,21 @@ app.post('/login', async (req, res) => {
       res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+app.get('fullPull', async (req, res) => {
+  try {
+    const client = await pool2.query(`SELECT * FROM client_data_${year}`);
+
+    if (client.rows.length === 0) {
+      res.status(404).json({ error: 'Client not found' });
+    } else {
+      res.json(client.rows);
+    }
+  } catch (error) {
+    console.error('Error executing query', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+})
 
 app.get('/protected-route', verifyToken, (req, res) => {
   res.json({ message: 'This is a protected route', user: req.user });

@@ -352,7 +352,7 @@ app.post('/login', async (req, res) => {
   }
 });
 
-app.get('fullPull', async (req, res) => {
+app.get('/fullPull', async (req, res) => {
   const year = new Date().getFullYear();
 clientKey = req.params.clientKey;
 

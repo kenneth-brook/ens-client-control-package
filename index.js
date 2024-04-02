@@ -54,20 +54,6 @@ const pool = new Pool({
     ssl: true,
 });
 
-let clientKey
-
-const pool2 = new Pool({
-  user: 'ensahost_client',
-  host: `client-${clientKey}.cfzb4vlbttqg.us-east-2.rds.amazonaws.com`,
-  database: 'postgres',
-  password: 'ZCK,tCI8lv4o',
-  port: 5432,
-  max: 20,
-  ssl: {
-    rejectUnauthorized: false, // Ignore unauthorized SSL errors (not recommended for production)
-  },
-});
-
 app.use(express.static('ens-cp-fe')); 
 
 app.use(express.json());
@@ -109,7 +95,7 @@ app.get('/client/:id', async (req, res) => {
 });
 
 app.get('/boot-strap-client/:clientKey', async (req, res) => {
-  clientKey = req.params.clientKey;
+  const clientKey = req.params.clientKey;
 
   try {
     const client = await pool.query('SELECT * FROM clients WHERE key = $1', [clientKey]);
@@ -337,7 +323,7 @@ app.post('/login', async (req, res) => {
       const token = jwt.sign(
           { userId: user.id, email: user.email, role: user.role },
           jwtSecretKey,
-          { expiresIn: '1h' } // Token expires in 1 hour
+          { expiresIn: '6h' } // Token expires in 1 hour
       );
 
       res.status(200).json({
@@ -353,22 +339,80 @@ app.post('/login', async (req, res) => {
 });
 
 app.get('/fullPull/:clientKey', async (req, res) => {
-  const year = new Date().getFullYear();
-clientKey = req.params.clientKey;
+  const { clientKey } = req.params;
+  const {
+    startDate,
+    endDate,
+    month,
+    agencyType,
+    page = 1
+  } = req.query;
 
+  const limit = Math.min(req.query.limit || 25, 25); // Max of 25 rows
+  const offset = (page - 1) * limit;
+
+  // Determine the year for constructing the table name dynamically
+  const year = startDate ? new Date(startDate).getFullYear() : new Date().getFullYear();
+  let queryBase = `FROM client_data_${year}`;
+  let whereConditions = [];
+  let queryParams = [];
+
+  // Filter by date range or specific month
+  if (startDate && endDate) {
+    queryParams.push(startDate, endDate);
+    whereConditions.push(`date BETWEEN $${queryParams.length - 1} AND $${queryParams.length}`);
+  } else if (month) {
+    const yearMonth = new Date(month).getFullYear();
+    queryBase += `_${yearMonth}`; // Adjust if your table naming scheme includes months
+  }
+
+  // Filter by agency_type
+  if (agencyType) {
+    queryParams.push(agencyType);
+    whereConditions.push(`agency_type = $${queryParams.length}`);
+  }
+
+  let whereClause = whereConditions.length ? ` WHERE ${whereConditions.join(' AND ')}` : '';
+
+  // Count Query for total matching entries
+  const countQuery = `SELECT COUNT(*) ${queryBase} ${whereClause}`;
+  
   try {
-    const client = await pool2.query(`SELECT * FROM client_data_${year}`);
+    const pool2 = new Pool({
+      user: 'ensahost_client',
+      host: `client-${clientKey}.cfzb4vlbttqg.us-east-2.rds.amazonaws.com`,
+      database: 'postgres',
+      password: 'ZCK,tCI8lv4o',
+      port: 5432,
+      max: 20,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    });
 
-    if (client.rows.length === 0) {
-      res.status(404).json({ error: 'Client not found' });
+    // Execute the count query
+    const countResult = await pool2.query(countQuery, queryParams);
+    const totalRows = parseInt(countResult.rows[0].count, 10);
+
+    // Data query with pagination
+    const dataQuery = `SELECT * ${queryBase} ${whereClause} LIMIT ${limit} OFFSET ${offset}`;
+    const result = await pool2.query(dataQuery, queryParams);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'No data found for the specified criteria' });
     } else {
-      res.json(client.rows);
+      res.json({
+        data: result.rows,
+        total: totalRows,
+        page,
+        totalPages: Math.ceil(totalRows / limit)
+      });
     }
   } catch (error) {
     console.error('Error executing query', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
-})
+});
 
 app.get('/protected-route', verifyToken, (req, res) => {
   res.json({ message: 'This is a protected route', user: req.user });

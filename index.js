@@ -359,8 +359,15 @@ app.get('/fullPull/:clientKey', async (req, res) => {
 
   // Filter by date range or specific month
   if (startDate && endDate) {
-    queryParams.push(startDate, endDate);
-    whereConditions.push(`date BETWEEN $${queryParams.length - 1} AND $${queryParams.length}`);
+    if (startDate === endDate) {
+      // Adjust endDate to include the entire day
+      const adjustedEndDate = new Date(endDate);
+      adjustedEndDate.setHours(23, 59, 59, 999); // Set to the last moment of the day
+      queryParams.push(startDate, adjustedEndDate.toISOString());
+    } else {
+      queryParams.push(startDate, endDate);
+    }
+    whereConditions.push(`creation BETWEEN $${queryParams.length - 1} AND $${queryParams.length}`);
   } else if (month) {
     const yearMonth = new Date(month).getFullYear();
     queryBase += `_${yearMonth}`; // Adjust if your table naming scheme includes months

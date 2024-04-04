@@ -408,16 +408,31 @@ app.get('/fullPull/:clientKey', async (req, res) => {
       },
     });
 
-    // Execute the count query to get total matching entries
-    const countQuery = `SELECT COUNT(*) ${queryBase} ${whereClause}`;
+    let baseQuery = `FROM client_data_${year} ${whereClause}`;
+
+    const countQuery = `SELECT COUNT(*) ${baseQuery}`;
     const countResult = await pool2.query(countQuery, queryParams);
     const totalRows = parseInt(countResult.rows[0].count, 10);
-    
-    // Data query with pagination and filters
-    const dataQuery = `SELECT * ${queryBase} ${whereClause} ORDER BY creation DESC LIMIT ${limit} OFFSET ${offset}`;
+
+    // Distinct value queries using the base query with filters
+    const distinctQueries = {
+      jurisdictions: `SELECT DISTINCT jurisdiction ${baseQuery}`,
+      battalions: `SELECT DISTINCT battalion ${baseQuery}`,
+      types: `SELECT DISTINCT type ${baseQuery}`,
+      typeDescriptions: `SELECT DISTINCT type_description ${baseQuery}`,
+    };
+
+    // Execute distinct queries concurrently
+    const distinctResults = await Promise.all(Object.values(distinctQueries).map(query => pool2.query(query, queryParams)));
+    const [jurisdictions, battalions, types, typeDescriptions] = distinctResults.map(result => 
+      result.rows.map(row => Object.values(row)[0])
+    );
+
+    // Main data query with pagination
+    const dataQuery = `SELECT * ${baseQuery} ORDER BY creation DESC LIMIT ${limit} OFFSET ${offset}`;
     const result = await pool2.query(dataQuery, queryParams);
-    
-    // Respond with the data
+
+    // Adjust the response to include the distinct lists
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'No data found for the specified criteria' });
     } else {
@@ -425,7 +440,13 @@ app.get('/fullPull/:clientKey', async (req, res) => {
         data: result.rows,
         total: totalRows,
         page,
-        totalPages: Math.ceil(totalRows / limit)
+        totalPages: Math.ceil(totalRows / limit),
+        filters: {
+          jurisdictions,
+          battalions,
+          types,
+          typeDescriptions,
+        }
       });
     }
   } catch (error) {

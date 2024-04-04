@@ -345,44 +345,55 @@ app.get('/fullPull/:clientKey', async (req, res) => {
     endDate,
     month,
     agencyType,
-    page = 1
+    battalion,
+    jurisdiction,
+    location,
+    masterIncidentId,
+    type,
+    typeDescription,
+    page = 1,
   } = req.query;
 
   const limit = Math.min(req.query.limit || 25, 25); // Max of 25 rows
   const offset = (page - 1) * limit;
 
-  // Determine the year for constructing the table name dynamically
+  // Determine the year for dynamic table name construction
   const year = startDate ? new Date(startDate).getFullYear() : new Date().getFullYear();
   let queryBase = `FROM client_data_${year}`;
   let whereConditions = [];
   let queryParams = [];
 
-  // Filter by date range or specific month
-  if (startDate && endDate) {
-    if (startDate === endDate) {
-      // Adjust endDate to include the entire day
-      const adjustedEndDate = new Date(endDate);
-      adjustedEndDate.setHours(23, 59, 59, 999); // Set to the last moment of the day
-      queryParams.push(startDate, adjustedEndDate.toISOString());
-    } else {
-      queryParams.push(startDate, endDate);
-    }
-    whereConditions.push(`creation BETWEEN $${queryParams.length - 1} AND $${queryParams.length}`);
-  } else if (month) {
-    const yearMonth = new Date(month).getFullYear();
-    queryBase += `_${yearMonth}`; // Adjust if your table naming scheme includes months
-  }
-
-  // Filter by agency_type
+  // Start adding text input filters here
   if (agencyType) {
-    queryParams.push(agencyType);
-    whereConditions.push(`agency_type = $${queryParams.length}`);
+    queryParams.push(`%${agencyType}%`);
+    whereConditions.push(`agency_type LIKE $${queryParams.length}`);
+  }
+  if (battalion) {
+    queryParams.push(`%${battalion}%`);
+    whereConditions.push(`battalion LIKE $${queryParams.length}`);
+  }
+  if (jurisdiction) {
+    queryParams.push(`%${jurisdiction}%`);
+    whereConditions.push(`jurisdiction LIKE $${queryParams.length}`);
+  }
+  if (location) {
+    queryParams.push(`%${location}%`);
+    whereConditions.push(`location LIKE $${queryParams.length}`);
+  }
+  if (masterIncidentId) {
+    queryParams.push(`%${masterIncidentId}%`);
+    whereConditions.push(`master_incident_id LIKE $${queryParams.length}`);
+  }
+  if (type) {
+    queryParams.push(`%${type}%`);
+    whereConditions.push(`type LIKE $${queryParams.length}`);
+  }
+  if (typeDescription) {
+    queryParams.push(`%${typeDescription}%`);
+    whereConditions.push(`type_description LIKE $${queryParams.length}`);
   }
 
   let whereClause = whereConditions.length ? ` WHERE ${whereConditions.join(' AND ')}` : '';
-
-  // Count Query for total matching entries
-  const countQuery = `SELECT COUNT(*) ${queryBase} ${whereClause}`;
   
   try {
     const pool2 = new Pool({
@@ -397,14 +408,16 @@ app.get('/fullPull/:clientKey', async (req, res) => {
       },
     });
 
-    // Execute the count query
+    // Execute the count query to get total matching entries
+    const countQuery = `SELECT COUNT(*) ${queryBase} ${whereClause}`;
     const countResult = await pool2.query(countQuery, queryParams);
     const totalRows = parseInt(countResult.rows[0].count, 10);
-
-    // Data query with pagination
-    const dataQuery = `SELECT * ${queryBase} ${whereClause} LIMIT ${limit} OFFSET ${offset}`;
+    
+    // Data query with pagination and filters
+    const dataQuery = `SELECT * ${queryBase} ${whereClause} ORDER BY creation DESC LIMIT ${limit} OFFSET ${offset}`;
     const result = await pool2.query(dataQuery, queryParams);
-
+    
+    // Respond with the data
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'No data found for the specified criteria' });
     } else {
